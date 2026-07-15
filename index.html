@@ -7,18 +7,140 @@
 <link rel="manifest" href="/manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-:root{ --bg:#0a0716; --text:#f5f0ff; --dim:#a99bc4; }
-html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Arial;}
-/* minimal inline styles kept for demo; move to styles.css for production */
+:root{
+  --bg:#0a0716;--bg-2:#130d22;--surface:#1c1430;--card:#241a3a;
+  --accent:#ffb84d;--cyan:#5ad1e6;--purple:#a855f7;--green:#06d6a0;
+  --text:#f5f0ff;--dim:#a99bc4;--border:rgba(255,255,255,0.12);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;background:var(--bg);color:var(--text);}
+body{font-family:'Inter',system-ui,sans-serif;color:var(--text);overflow:hidden}
+#home{position:relative;height:100vh;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;align-items:center;gap:18px;padding:20px 14px 10px;}
+#starsCanvas{position:absolute;inset:0;z-index:0;pointer-events:none}
+.hero,.stats-rings,.section-label,.grid,.footer-hub{position:relative;z-index:1}
+.hero{width:100%;max-width:440px;background:linear-gradient(160deg,rgba(36,26,58,.85),rgba(19,13,34,.9));border:1px solid var(--border);border-radius:22px;padding:18px 20px 16px;display:flex;flex-direction:column;align-items:center;gap:4px;box-shadow:0 0 40px -12px rgba(168,85,247,0.25), inset 0 1px 0 rgba(255,255,255,0.06);}
+.hero-icon{font-size:34px;filter:drop-shadow(0 0 14px rgba(255,184,77,.6));}
+.hero-title{font-family:'Fredoka',sans-serif;font-size:25px;font-weight:700;letter-spacing:.01em;background:linear-gradient(120deg,#fff 0%,var(--cyan) 45%,var(--purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-top:2px}
+.hero-sub{font-size:11px;color:var(--dim);letter-spacing:.06em;margin-top:1px}
+.grid{width:100%;max-width:440px;display:grid;grid-template-columns:1fr 1fr;gap:12px 10px}
+.hex-card{--glow:#ffb84d;--glow-r:255;--glow-g:184;--glow-b:77;clip-path:polygon(16% 0%,84% 0%,100% 18%,100% 82%,84% 100%,16% 100%,0% 82%,0% 18%);background:linear-gradient(155deg,var(--card) 0%,var(--surface) 100%);padding:22px 14px 18px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:5px;cursor:pointer;position:relative;box-shadow:0 0 0 1px rgba(var(--glow-r),var(--glow-g),var(--glow-b),0.35) inset,0 8px 24px -10px rgba(var(--glow-r),var(--glow-g),var(--glow-b),0.55);transition:transform .18s cubic-bezier(.34,1.4,.64,1),box-shadow .18s ease}
+.hex-card:active{transform:scale(.93)}
+.hex-icon{font-size:30px}
+.hex-name{font-family:'Fredoka',sans-serif;font-size:14.5px;font-weight:600}
+.hex-play{font-size:10.5px;font-weight:700;color:var(--glow);background:rgba(255,184,77,0.16);border-radius:20px;padding:4px 14px;margin-top:6px}
+.footer-hub{width:100%;display:flex;flex-direction:column;align-items:center;gap:10px;padding:8px 0 22px;margin-top:6px}
+#ov{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;background:var(--bg);transform:translateY(100%);transition:transform .3s cubic-bezier(.25,.46,.45,.94)}
+#ov.open{transform:translateY(0)}
+#topbar{display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(10,7,22,.97);border-bottom:1px solid var(--border)}
+#backbtn{width:36px;height:36px;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:17px;cursor:pointer}
+#gframe{flex:1;border:none;width:100%;display:block;background:var(--bg)}
+#loader{position:absolute;inset:0;top:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:var(--bg);z-index:5}
+#loader.gone{opacity:0;pointer-events:none}
+.spin{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.1);border-top-color:var(--accent);animation:spin .75s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){ .hero-icon, .spin { animation:none!important; transition:none!important } }
 </style>
 </head>
 <body>
-<div id="home"><h1>Online Games</h1></div>
+<canvas id="starsCanvas"></canvas>
+<div id="home">
+  <div class="hero">
+    <div class="hero-icon">🎮</div>
+    <div class="hero-title">Online Games</div>
+    <div class="hero-sub">10 Games • Offline Ready</div>
+  </div>
+
+  <div class="section-label">Puzzle &amp; Casual</div>
+  <div class="grid" id="gamesGrid">
+    <!-- Cards will be injected -->
+  </div>
+
+  <div class="footer-hub">
+    <div class="hub-title">Online Gaming Nexus</div>
+    <div class="hub-sub">Made with love • Fully Offline</div>
+  </div>
+</div>
+
+<div id="ov" role="dialog" aria-modal="true" aria-labelledby="gtitle">
+  <div id="topbar">
+    <button id="backbtn">&#8592;</button>
+    <span id="gicon">🎮</span>
+    <span id="gtitle">Game</span>
+  </div>
+  <div id="loader"><div class="spin"></div><div style="font-size:12px;color:var(--dim)">Loading game...</div></div>
+  <iframe id="gframe" title="Game frame"></iframe>
+</div>
+
 <script>
-// Register service worker if available
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('/sw.js').catch(console.error);
+const GAMES = [
+  {file:'water-sort-puzzle.html', icon:'💧', name:'Water Sort'},
+  {file:'color-blocks.html', icon:'🧩', name:'Color Blocks'},
+  {file:'2048-game.html', icon:'🔢', name:'2048'},
+  {file:'word-finder.html', icon:'🔤', name:'Word Finder'},
+  {file:'nuts-and-bolts.html', icon:'🔩', name:'Nuts & Bolts'},
+  {file:'chess.html', icon:'♟', name:'Chess'},
+  {file:'connect4.html', icon:'🔴', name:'Connect 4'},
+  {file:'reversi.html', icon:'⚫', name:'Reversi'},
+  {file:'checkers.html', icon:'🟡', name:'Checkers'},
+  {file:'battleship.html', icon:'🚢', name:'Battleship'}
+];
+
+const grid = document.getElementById('gamesGrid');
+GAMES.forEach(g=>{
+  const el = document.createElement('div');
+  el.className='hex-card';
+  el.tabIndex=0; el.setAttribute('role','button');
+  el.style.setProperty('--glow','#3a86ff');
+  el.innerHTML = `<div class="hex-icon">${g.icon}</div><div class="hex-name">${g.name}</div><div class="hex-play">Play</div>`;
+  el.addEventListener('click', ()=>openGame(g.file,g.icon,g.name));
+  el.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' ') { e.preventDefault(); openGame(g.file,g.icon,g.name); } });
+  grid.appendChild(el);
+});
+
+// Canvas starfield (lightweight)
+(function(){
+  const c = document.getElementById('starsCanvas');
+  const ctx = c.getContext('2d');
+  let w=0,h=0,stars=[];
+  function resize(){ w=c.width=innerWidth; h=c.height=innerHeight; initStars(); }
+  function initStars(){ stars=[]; const n = Math.round((w*h)/6000); for(let i=0;i<n;i++) stars.push({x:Math.random()*w,y:Math.random()*h,r:Math.random()*1.6+0.4,tw:Math.random()*3+1,phase:Math.random()*Math.PI*2}); }
+  function draw(t){ ctx.clearRect(0,0,w,h); for(const s of stars){ const a = 0.3 + 0.7 * (0.5 + 0.5*Math.sin((t/1000)*s.tw + s.phase)); ctx.fillStyle = `rgba(255,255,255,${a.toFixed(2)})`; ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2); ctx.fill(); } requestAnimationFrame(draw); }
+  addEventListener('resize', resize); resize(); requestAnimationFrame(draw);
+})();
+
+// Overlay + loader + fetch-based game loading
+const ov = document.getElementById('ov');
+const fr = document.getElementById('gframe');
+const loader = document.getElementById('loader');
+const backbtn = document.getElementById('backbtn');
+let currentBlob = null, lastActive=null, trapHandler=null;
+
+function trapFocus(e){ const focusable = ov.querySelectorAll('a[href], button, textarea, input, select, [tabindex]:not([tabindex="-1"])'); if(!focusable.length) return; const first=focusable[0], last=focusable[focusable.length-1]; if(e.key==='Tab'){ if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); } else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); } } else if(e.key==='Escape'){ closeGame(); } }
+
+async function openGame(file, icon, name){ lastActive=document.activeElement; document.getElementById('gicon').textContent = icon; document.getElementById('gtitle').textContent = name; loader.classList.remove('gone'); ov.classList.add('open'); document.body.style.overflow='hidden';
+  try{
+    // network-first: try fetch, fallback to cache via SW
+    const res = await fetch('/games/'+file);
+    if(!res.ok) throw new Error('Network error');
+    const html = await res.text();
+    if(currentBlob) try{ URL.revokeObjectURL(currentBlob); }catch(e){}
+    const blob = new Blob([html],{type:'text/html'}); currentBlob = URL.createObjectURL(blob);
+    fr.setAttribute('sandbox','allow-scripts allow-same-origin allow-popups'); fr.src = currentBlob; fr.onload = ()=> setTimeout(()=>loader.classList.add('gone'),80);
+  }catch(err){
+    console.warn('Fetch failed, trying cache...');
+    // try to load from cache via fetch still (sw should serve cached)
+    try{ const r2 = await fetch('/games/'+file); const html2 = await r2.text(); const blob2 = new Blob([html2],{type:'text/html'}); if(currentBlob) try{ URL.revokeObjectURL(currentBlob);}catch(e){} currentBlob=URL.createObjectURL(blob2); fr.src=currentBlob; fr.onload = ()=> setTimeout(()=>loader.classList.add('gone'),80); }catch(e){ loader.classList.add('gone'); alert('Game could not be loaded offline.'); }
+  }
+
+  // focus & trap
+  trapHandler = trapFocus; ov.addEventListener('keydown', trapHandler); const focusable = ov.querySelectorAll('a[href], button, textarea, input, select, [tabindex]:not([tabindex="-1"])'); if(focusable.length) focusable[0].focus();
 }
+
+function closeGame(){ ov.classList.remove('open'); document.body.style.overflow=''; if(trapHandler) ov.removeEventListener('keydown', trapHandler); trapHandler=null; try{ fr.src='about:blank'; fr.removeAttribute('sandbox'); if(currentBlob){ URL.revokeObjectURL(currentBlob); currentBlob=null;}}catch(e){} loader.classList.remove('gone'); try{ if(lastActive) lastActive.focus(); }catch(e){} }
+backbtn.addEventListener('click', closeGame); document.addEventListener('keydown',(e)=>{ if(e.key==='Escape' && ov.classList.contains('open')) closeGame(); });
+
+// register service worker
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('/sw.js').catch(console.error); }
 </script>
 </body>
 </html>
